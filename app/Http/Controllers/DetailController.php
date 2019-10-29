@@ -21,13 +21,16 @@ class DetailController extends Controller
         
         $media_files = Media::where('detail_id',0)->where('type','file')->get(); //get unassociated media
         $media_images = Media::where('detail_id',0)->where('type','image')->get();
-        if($media_files->count()==0){
-            return response()->status(422);
-        }
 
         if($media_images->count()==0){
-            return response()->status(422);
+            return response()->json(['errors'=>['image'=>["No image included"] ]],422);
         }
+
+        if($media_files->count()==0){
+            return response()->json(['errors'=>['file'=>["No file included"] ]],422);
+        }
+
+       
 
         $detail = Detail::create($data);
         $detail->medias()->saveMany($media_images);

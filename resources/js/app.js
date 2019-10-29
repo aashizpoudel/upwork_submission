@@ -7,6 +7,10 @@
 require('./bootstrap');
 
 window.Vue = require('vue');
+import VueMask from 'vue-inputmask';
+import Vuelidate from 'vuelidate';
+Vue.use(VueMask.default);
+Vue.use(Vuelidate);
 
 /**
  * The following block of code may be used to automatically register your
