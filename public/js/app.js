@@ -1923,9 +1923,42 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   mounted: function mounted() {
     this.loadImages();
+    this.loadFiles();
   },
   data: function data() {
     return {
@@ -1939,14 +1972,55 @@ __webpack_require__.r(__webpack_exports__);
         message: ''
       },
       success: false,
-      loaded: true
+      loaded: true,
+      errorMessage: ""
     };
   },
   methods: {
-    submit: function submit() {},
-    submitFiles: function submitFiles() {},
-    submitImages: function submitImages() {
+    submit: function submit() {
       var _this = this;
+
+      this.errors = "";
+      this.errorMessage = "";
+      axios.post('/submit-details', this.fields).then(function (resp) {
+        _this.loaded = false;
+        _this.success = true;
+        _this.fields = {};
+        _this.errors = {};
+
+        _this.loadImages();
+
+        _this.loadFiles();
+      })["catch"](function (e) {
+        if (e.response.status == 422) _this.errors = e.response.data.errors;else _this.errorMessage = "Error submitting form. Error code: " + e.response.status;
+      })["finally"](function (e) {
+        _this.loaded = true;
+      });
+    },
+    submitFiles: function submitFiles() {
+      var _this2 = this;
+
+      var file = this.$refs.file.files[0];
+
+      if (this.loaded && file) {
+        var formData = new FormData();
+        formData.append('file', file);
+        this.loaded = false;
+        this.fileErrors.status = '';
+        this.fileErrors.message = '';
+        axios.post('/upload-files', formData).then(function (response) {
+          _this2.loadFiles();
+        })["catch"](function (e) {
+          _this2.fileErrors.status = 'text-danger';
+          _this2.fileErrors.message = 'Failed to upload file. Response code: ' + e.response.status;
+          if (e.response.status == 422) _this2.fileErrors.message = e.response.data.errors.file;
+        })["finally"](function () {
+          _this2.loaded = true;
+        });
+      }
+    },
+    submitImages: function submitImages() {
+      var _this3 = this;
 
       var image = this.$refs.image.files[0];
 
@@ -1957,18 +2031,44 @@ __webpack_require__.r(__webpack_exports__);
         this.imageErrors.status = '';
         this.imageErrors.message = '';
         axios.post('/upload-images', formData).then(function (response) {
-          console.log(response);
+          _this3.loadImages();
         })["catch"](function (e) {
-          _this.imageErrors.status = 'text-danger';
-          _this.imageErrors.message = 'Failed to upload image. Response code: ' + e.response.status;
+          _this3.imageErrors.status = 'text-danger';
+          _this3.imageErrors.message = 'Failed to upload image. Response code: ' + e.response.status;
+          if (e.response.status == 422) _this3.imageErrors.message = e.response.data.errors.image;
+        })["finally"](function () {
+          _this3.loaded = true;
         });
       }
     },
     loadImages: function loadImages() {
-      var _this2 = this;
+      var _this4 = this;
 
+      this.images = [];
       axios.get('get-images').then(function (response) {
-        _this2.images = response.data;
+        _this4.images = response.data;
+      });
+    },
+    loadFiles: function loadFiles() {
+      var _this5 = this;
+
+      this.files = [];
+      axios.get('get-files').then(function (response) {
+        _this5.files = response.data;
+      });
+    },
+    deleteMedia: function deleteMedia(e) {
+      var _this6 = this;
+
+      this.loaded = false;
+      axios.get('/delete/' + e.currentTarget.dataset.id).then(function (response) {
+        _this6.loadImages();
+
+        _this6.loadFiles(); //display notification
+
+      })["catch"](function (e) {//display error notification
+      })["finally"](function (e) {
+        _this6.loaded = true;
       });
     }
   }
@@ -6433,7 +6533,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, "\n.pointer[data-v-34881119]{\n    cursor: pointer;\n}\n.photos img[data-v-34881119]{\n    max-width:200px;\n}\n", ""]);
+exports.push([module.i, "\n.pointer[data-v-34881119]{\n    cursor: pointer;\n}\n.photos img[data-v-34881119]{\n    max-width:130px;\n}\n.single-image[data-v-34881119]{\n    padding:5px;\n    display:-webkit-box;\n    display:flex;\n    -webkit-box-orient: vertical;\n    -webkit-box-direction: normal;\n            flex-direction: column;\n}\n.single-image span[data-v-34881119]{\n    align-self: start;\n    font-size:large;\n}\n.loader[data-v-34881119] {\n  position: fixed;\n  top: 0%;\n  left: 0%;\n  width: 100%;\n  height: 100%;\n  display: -webkit-box;\n  display: flex;\n  -webkit-box-pack: center;\n          justify-content: center;\n  z-index: 9999;\n  -webkit-box-align: center;\n          align-items: center;\n  background: #ff07070f;\n}\n\n", ""]);
 
 // exports
 
@@ -37927,74 +38027,408 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _c("div", { staticClass: "row justify-content-center" }, [
-    _c("div", { staticClass: "col-md-6" }, [
-      _c("div", { staticClass: "card" }, [
-        _c("div", { staticClass: "card-body" }, [
-          _c("h4", { staticClass: "card-title" }, [
-            _vm._v("Data Submission Form")
-          ]),
-          _vm._v(" "),
-          _c("form", [
-            _vm._m(0),
-            _vm._v(" "),
-            _vm._m(1),
-            _vm._v(" "),
-            _vm._m(2),
-            _vm._v(" "),
-            _vm._m(3),
-            _vm._v(" "),
-            _vm._m(4),
-            _vm._v(" "),
-            _c("div", { staticClass: "form-group" }, [
-              _c("label", { staticClass: "control-label" }, [_vm._v("Photos")]),
-              _vm._v(" "),
-              _c(
-                "div",
-                { staticClass: "photos d-flex flex-row flex-wrap m-3" },
-                [
-                  _vm._l(_vm.images, function(image) {
-                    return _c("img", {
-                      key: image.id,
-                      staticClass: "img-responsive mx-1",
-                      attrs: { src: "/storage/" + image.location }
-                    })
-                  }),
-                  _vm._v(" "),
-                  _c(
-                    "label",
-                    { staticClass: "control-label", attrs: { for: "image" } },
-                    [
-                      _c("a", { staticClass: "btn btn-outline-info pointer" }, [
-                        _vm._v("Add photos")
-                      ]),
-                      _vm._v(" "),
-                      _c("input", {
-                        ref: "image",
-                        staticClass: "form-control",
-                        staticStyle: { display: "none" },
-                        attrs: { id: "image", name: "image", type: "file" },
-                        on: { change: _vm.submitImages }
-                      })
-                    ]
-                  )
-                ],
-                2
-              ),
-              _vm._v(" "),
-              _c("p", { class: _vm.imageErrors.status }, [
-                _vm._v(_vm._s(_vm.imageErrors.message))
-              ])
+  return _c("div", [
+    _vm.loaded == false
+      ? _c("div", { staticClass: "loader" }, [
+          _c("i", { staticClass: "fa-3x fa fa-spinner fa-spin" })
+        ])
+      : _vm._e(),
+    _vm._v(" "),
+    _c("div", { staticClass: "row justify-content-center" }, [
+      _c("div", { staticClass: "col-md-12" }, [
+        _c("div", { staticClass: "card" }, [
+          _c("div", { staticClass: "card-body" }, [
+            _c("h4", { staticClass: "card-title" }, [
+              _vm._v("Data Submission Form")
             ]),
             _vm._v(" "),
-            _vm._m(5),
-            _vm._v(" "),
-            _c("input", {
-              staticClass: "btn btn-info",
-              attrs: { type: "submit", value: "Submit" }
-            }),
-            _vm._v(" "),
-            _vm.loaded == false ? _c("span", [_vm._v("working...")]) : _vm._e()
+            _c(
+              "form",
+              {
+                on: {
+                  submit: function($event) {
+                    $event.preventDefault()
+                    return _vm.submit($event)
+                  }
+                }
+              },
+              [
+                _c("div", { staticClass: "row" }, [
+                  _c("div", { staticClass: "col-md-6" }, [
+                    _c("div", { staticClass: "form-group" }, [
+                      _c(
+                        "label",
+                        {
+                          staticClass: "control-label",
+                          attrs: { for: "name" }
+                        },
+                        [_vm._v("Name")]
+                      ),
+                      _vm._v(" "),
+                      _c("input", {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.fields.name,
+                            expression: "fields.name"
+                          }
+                        ],
+                        staticClass: "form-control w-75",
+                        attrs: { name: "name", placeholder: "Name" },
+                        domProps: { value: _vm.fields.name },
+                        on: {
+                          input: function($event) {
+                            if ($event.target.composing) {
+                              return
+                            }
+                            _vm.$set(_vm.fields, "name", $event.target.value)
+                          }
+                        }
+                      }),
+                      _vm._v(" "),
+                      _vm.errors && _vm.errors.name
+                        ? _c("div", { staticClass: "text-danger" }, [
+                            _vm._v(_vm._s(_vm.errors.name[0]))
+                          ])
+                        : _vm._e()
+                    ]),
+                    _vm._v(" "),
+                    _c("div", { staticClass: "form-group" }, [
+                      _c(
+                        "label",
+                        {
+                          staticClass: "control-label",
+                          attrs: { for: "name" }
+                        },
+                        [_vm._v("Email")]
+                      ),
+                      _vm._v(" "),
+                      _c("input", {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.fields.email,
+                            expression: "fields.email"
+                          }
+                        ],
+                        staticClass: "form-control w-75",
+                        attrs: {
+                          name: "email",
+                          type: "email",
+                          placeholder: "Name"
+                        },
+                        domProps: { value: _vm.fields.email },
+                        on: {
+                          input: function($event) {
+                            if ($event.target.composing) {
+                              return
+                            }
+                            _vm.$set(_vm.fields, "email", $event.target.value)
+                          }
+                        }
+                      }),
+                      _vm._v(" "),
+                      _vm.errors && _vm.errors.email
+                        ? _c("div", { staticClass: "text-danger" }, [
+                            _vm._v(_vm._s(_vm.errors.email[0]))
+                          ])
+                        : _vm._e()
+                    ]),
+                    _vm._v(" "),
+                    _c("div", { staticClass: "form-group" }, [
+                      _c(
+                        "label",
+                        {
+                          staticClass: "control-label",
+                          attrs: { for: "name" }
+                        },
+                        [_vm._v("Phone Number")]
+                      ),
+                      _vm._v(" "),
+                      _c("input", {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.fields.phone_number,
+                            expression: "fields.phone_number"
+                          }
+                        ],
+                        staticClass: "form-control w-75",
+                        attrs: {
+                          name: "phone_number",
+                          placeholder: "Phone Number"
+                        },
+                        domProps: { value: _vm.fields.phone_number },
+                        on: {
+                          input: function($event) {
+                            if ($event.target.composing) {
+                              return
+                            }
+                            _vm.$set(
+                              _vm.fields,
+                              "phone_number",
+                              $event.target.value
+                            )
+                          }
+                        }
+                      }),
+                      _vm._v(" "),
+                      _vm.errors && _vm.errors.phone_number
+                        ? _c("div", { staticClass: "text-danger" }, [
+                            _vm._v(_vm._s(_vm.errors.phone_number[0]))
+                          ])
+                        : _vm._e()
+                    ]),
+                    _vm._v(" "),
+                    _c("div", { staticClass: "form-group" }, [
+                      _c(
+                        "label",
+                        {
+                          staticClass: "control-label",
+                          attrs: { for: "name" }
+                        },
+                        [_vm._v("Address")]
+                      ),
+                      _vm._v(" "),
+                      _c("input", {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.fields.address,
+                            expression: "fields.address"
+                          }
+                        ],
+                        staticClass: "form-control w-75",
+                        attrs: { name: "address", placeholder: "Address" },
+                        domProps: { value: _vm.fields.address },
+                        on: {
+                          input: function($event) {
+                            if ($event.target.composing) {
+                              return
+                            }
+                            _vm.$set(_vm.fields, "address", $event.target.value)
+                          }
+                        }
+                      }),
+                      _vm._v(" "),
+                      _vm.errors && _vm.errors.address
+                        ? _c("div", { staticClass: "text-danger" }, [
+                            _vm._v(_vm._s(_vm.errors.address[0]))
+                          ])
+                        : _vm._e()
+                    ]),
+                    _vm._v(" "),
+                    _c("div", { staticClass: "form-group" }, [
+                      _c(
+                        "label",
+                        {
+                          staticClass: "control-label",
+                          attrs: { for: "name" }
+                        },
+                        [_vm._v("Zipcode")]
+                      ),
+                      _vm._v(" "),
+                      _c("input", {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.fields.zipcode,
+                            expression: "fields.zipcode"
+                          }
+                        ],
+                        staticClass: "form-control w-75",
+                        attrs: {
+                          name: "zipcode",
+                          type: "number",
+                          placeholder: "Zip Code"
+                        },
+                        domProps: { value: _vm.fields.zipcode },
+                        on: {
+                          input: function($event) {
+                            if ($event.target.composing) {
+                              return
+                            }
+                            _vm.$set(_vm.fields, "zipcode", $event.target.value)
+                          }
+                        }
+                      }),
+                      _vm._v(" "),
+                      _vm.errors && _vm.errors.zipcode
+                        ? _c("div", { staticClass: "text-danger" }, [
+                            _vm._v(_vm._s(_vm.errors.zipcode[0]))
+                          ])
+                        : _vm._e()
+                    ])
+                  ]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "col-md-6" }, [
+                    _c("div", { staticClass: "form-group" }, [
+                      _c("label", { staticClass: "control-label" }, [
+                        _vm._v("Photos")
+                      ]),
+                      _vm._v(" "),
+                      _c(
+                        "div",
+                        { staticClass: "photos d-flex flex-row flex-wrap m-3" },
+                        _vm._l(_vm.images, function(image) {
+                          return _c(
+                            "div",
+                            { key: image.id, staticClass: "single-image" },
+                            [
+                              _c("img", {
+                                staticClass: "img-responsive mx-1",
+                                attrs: { src: "/storage/" + image.location }
+                              }),
+                              _vm._v(" "),
+                              _c(
+                                "span",
+                                {
+                                  staticClass:
+                                    "badge badge-outline-secondary pointer",
+                                  attrs: {
+                                    title: "Delete this image",
+                                    "data-id": image.id
+                                  },
+                                  on: { click: _vm.deleteMedia }
+                                },
+                                [_c("i", { staticClass: "fa fa-trash" })]
+                              )
+                            ]
+                          )
+                        }),
+                        0
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "label",
+                        {
+                          staticClass: "control-label",
+                          attrs: { for: "image" }
+                        },
+                        [
+                          _vm._m(0),
+                          _vm._v(" "),
+                          _c("input", {
+                            ref: "image",
+                            staticClass: "form-control",
+                            staticStyle: { display: "none" },
+                            attrs: { id: "image", name: "image", type: "file" },
+                            on: { change: _vm.submitImages }
+                          })
+                        ]
+                      ),
+                      _vm._v(" "),
+                      _c("p", { class: _vm.imageErrors.status }, [
+                        _vm._v(_vm._s(_vm.imageErrors.message))
+                      ])
+                    ]),
+                    _vm._v(" "),
+                    _c("div", { staticClass: "form-group" }, [
+                      _c("label", { staticClass: "control-label" }, [
+                        _vm._v("License Files")
+                      ]),
+                      _vm._v(" "),
+                      _c(
+                        "div",
+                        {
+                          staticClass:
+                            "documents d-flex flex-column flex-wrap m-3"
+                        },
+                        [
+                          _c(
+                            "ul",
+                            { staticClass: "list-group" },
+                            [
+                              _vm._l(_vm.files, function(file) {
+                                return _c(
+                                  "li",
+                                  {
+                                    key: file.id,
+                                    staticClass:
+                                      "list-group-item list-group-item-light my-1"
+                                  },
+                                  [
+                                    _c("a", { attrs: { href: "#" } }, [
+                                      _vm._v(_vm._s(file.name))
+                                    ]),
+                                    _vm._v(" "),
+                                    _c(
+                                      "span",
+                                      {
+                                        staticClass:
+                                          "badge badge-outline-secondary pointer text-dark",
+                                        attrs: {
+                                          title: "Delete this File",
+                                          "data-id": file.id
+                                        },
+                                        on: { click: _vm.deleteMedia }
+                                      },
+                                      [
+                                        _c("i", {
+                                          staticClass: "fa-2x fa fa-trash"
+                                        })
+                                      ]
+                                    )
+                                  ]
+                                )
+                              }),
+                              _vm._v(" "),
+                              _c(
+                                "label",
+                                {
+                                  staticClass: "control-label my-1",
+                                  attrs: { for: "document" }
+                                },
+                                [
+                                  _vm._m(1),
+                                  _vm._v(" "),
+                                  _c("input", {
+                                    ref: "file",
+                                    staticClass: "form-control",
+                                    staticStyle: { display: "none" },
+                                    attrs: {
+                                      id: "document",
+                                      name: "document",
+                                      type: "file"
+                                    },
+                                    on: { change: _vm.submitFiles }
+                                  })
+                                ]
+                              ),
+                              _vm._v(" "),
+                              _c("p", { class: _vm.fileErrors.status }, [
+                                _vm._v(_vm._s(_vm.fileErrors.message))
+                              ])
+                            ],
+                            2
+                          )
+                        ]
+                      )
+                    ]),
+                    _vm._v(" "),
+                    _c("input", {
+                      staticClass: "btn btn-info",
+                      attrs: { type: "submit", value: "Submit" }
+                    }),
+                    _vm._v(" "),
+                    _c("p", { staticClass: "text-danger" }, [
+                      _vm._v(_vm._s(this.errorMessage))
+                    ]),
+                    _vm._v(" "),
+                    _vm.success == true
+                      ? _c("p", { staticClass: "text-success" }, [
+                          _vm._v("Successfully submitted the user data.")
+                        ])
+                      : _vm._e()
+                  ])
+                ])
+              ]
+            )
           ])
         ])
       ])
@@ -38006,107 +38440,18 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "form-group" }, [
-      _c("label", { staticClass: "control-label", attrs: { for: "name" } }, [
-        _vm._v("Name")
-      ]),
-      _vm._v(" "),
-      _c("input", {
-        staticClass: "form-control",
-        attrs: { name: "name", placeholder: "Name" }
-      })
+    return _c("a", { staticClass: "btn btn-outline-info pointer" }, [
+      _c("i", { staticClass: "fa fa-upload mx-1" }),
+      _vm._v(" Add photos")
     ])
   },
   function() {
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "form-group" }, [
-      _c("label", { staticClass: "control-label", attrs: { for: "name" } }, [
-        _vm._v("Email")
-      ]),
-      _vm._v(" "),
-      _c("input", {
-        staticClass: "form-control",
-        attrs: { name: "email", type: "email", placeholder: "Name" }
-      })
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "form-group" }, [
-      _c("label", { staticClass: "control-label", attrs: { for: "name" } }, [
-        _vm._v("Phone Number")
-      ]),
-      _vm._v(" "),
-      _c("input", {
-        staticClass: "form-control",
-        attrs: { name: "phone_number", placeholder: "Phone Number" }
-      })
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "form-group" }, [
-      _c("label", { staticClass: "control-label", attrs: { for: "name" } }, [
-        _vm._v("Address")
-      ]),
-      _vm._v(" "),
-      _c("input", {
-        staticClass: "form-control",
-        attrs: { name: "address", placeholder: "Address" }
-      })
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "form-group" }, [
-      _c("label", { staticClass: "control-label", attrs: { for: "name" } }, [
-        _vm._v("Zipcode")
-      ]),
-      _vm._v(" "),
-      _c("input", {
-        staticClass: "form-control",
-        attrs: { name: "zipcode", type: "number", placeholder: "Zip Code" }
-      })
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "form-group" }, [
-      _c("label", { staticClass: "control-label" }, [_vm._v("License Files")]),
-      _vm._v(" "),
-      _c("div", { staticClass: "documents d-flex flex-column flex-wrap m-3" }, [
-        _c("ul", { staticClass: "list-group" }, [
-          _c("li", { staticClass: "list-group-item my-1" }, [_vm._v("File 1")]),
-          _vm._v(" "),
-          _c("li", { staticClass: "list-group-item my-1" }, [_vm._v("File 2")]),
-          _vm._v(" "),
-          _c(
-            "label",
-            { staticClass: "control-label my-1", attrs: { for: "document" } },
-            [
-              _c("a", { staticClass: "btn btn-outline-info pointer" }, [
-                _vm._v("Add Files")
-              ]),
-              _vm._v(" "),
-              _c("input", {
-                staticClass: "form-control",
-                staticStyle: { display: "none" },
-                attrs: { id: "document", name: "document", type: "file" }
-              })
-            ]
-          )
-        ])
-      ])
+    return _c("a", { staticClass: "btn btn-outline-info pointer" }, [
+      _c("i", { staticClass: "fa fa-upload mx-1" }),
+      _vm._v(" Add Files")
     ])
   }
 ]

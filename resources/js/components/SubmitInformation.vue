@@ -1,45 +1,62 @@
 <template>
+<div>
+ <div v-if="loaded==false" class='loader'>
+   <i class="fa-3x fa fa-spinner fa-spin"></i> 
+ </div>
   <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-md-12">
       <div class="card">
         <div class="card-body">
           <h4 class="card-title">Data Submission Form</h4>
-          <form>
-            <div class="form-group">
+          <form @submit.prevent="submit">
+            <div class='row'>
+              <div class='col-md-6'>
+                <div class="form-group">
               <label class="control-label" for="name">Name</label>
-              <input class="form-control" name="name" placeholder="Name" />
+              <input class="form-control w-75" v-model="fields.name" name="name" placeholder="Name" />
+              <div v-if="errors && errors.name" class="text-danger">{{ errors.name[0] }}</div>
             </div>
 
             <div class="form-group">
               <label class="control-label" for="name">Email</label>
-              <input class="form-control" name="email" type="email" placeholder="Name" />
+              <input class="form-control w-75" v-model='fields.email' name="email" type="email" placeholder="Name" />
+                      <div v-if="errors && errors.email" class="text-danger">{{ errors.email[0] }}</div>  
             </div>
 
             <div class="form-group">
               <label class="control-label" for="name">Phone Number</label>
-              <input class="form-control" name="phone_number" placeholder="Phone Number" />
+              <input class="form-control w-75" v-model='fields.phone_number' name="phone_number" placeholder="Phone Number" />
+                       <div v-if="errors && errors.phone_number" class="text-danger">{{ errors.phone_number[0] }}</div>
             </div>
 
             <div class="form-group">
               <label class="control-label" for="name">Address</label>
-              <input class="form-control" name="address" placeholder="Address" />
+              <input class="form-control w-75" v-model='fields.address' name="address" placeholder="Address" />
+           <div v-if="errors && errors.address" class="text-danger">{{ errors.address[0] }}</div>
             </div>
 
             <div class="form-group">
               <label class="control-label" for="name">Zipcode</label>
-              <input class="form-control" name="zipcode" type="number" placeholder="Zip Code" />
+              <input class="form-control w-75" name="zipcode" v-model='fields.zipcode' type="number" placeholder="Zip Code" />
+              <div v-if="errors && errors.zipcode" class="text-danger">{{ errors.zipcode[0] }}</div>
+            
             </div>
-
-            <div class="form-group">
+              </div>
+              <div class='col-md-6'>
+                <div class="form-group">
               <label class="control-label">Photos</label>
 
               <div class="photos d-flex flex-row flex-wrap m-3">
                   
-                <img v-for="image in images" :key="image.id" class="img-responsive mx-1" :src="'/storage/' +image.location" />
-                
+                <div class='single-image' v-for="image in images" :key="image.id">
+                <img class="img-responsive mx-1" :src="'/storage/' +image.location" />
+                <span title="Delete this image" @click="deleteMedia" :data-id='image.id' class='badge badge-outline-secondary pointer'><i class='fa fa-trash'></i></span>
+                </div>
 
-                <label class="control-label" for="image">
-                  <a class="btn btn-outline-info pointer">Add photos</a>
+                
+              </div>
+              <label class="control-label" for="image">
+                  <a class="btn btn-outline-info pointer"><i class='fa fa-upload mx-1'></i> Add photos</a>
                   <input
                     class="form-control"
                     id="image"
@@ -50,7 +67,6 @@
                     @change="submitImages"
                   />
                 </label>
-              </div>
               <p :class='imageErrors.status'>{{imageErrors.message}}</p>
             </div>
 
@@ -58,28 +74,44 @@
               <label class="control-label">License Files</label>
               <div class="documents d-flex flex-column flex-wrap m-3">
                 <ul class="list-group">
-                  <li class="list-group-item my-1">File 1</li>
-                  <li class="list-group-item my-1">File 2</li>
+                  <li v-for="file in files" :key="file.id" class="list-group-item list-group-item-light my-1"><a href="#">{{file.name}}</a>
+                <span title="Delete this File" @click="deleteMedia" :data-id='file.id' class='badge badge-outline-secondary pointer text-dark'><i class='fa-2x fa fa-trash'></i></span>
+
+                  </li>
+                  
                   <label for="document" class="control-label my-1">
-                    <a class="btn btn-outline-info pointer">Add Files</a>
+                    <a class="btn btn-outline-info pointer"><i class='fa fa-upload mx-1'></i> Add Files</a>
                     <input
                       id="document"
                       class="form-control"
                       name="document"
                       type="file"
                       style="display:none"
+                      ref='file'
+                      @change="submitFiles"
+
                     />
+
                   </label>
+                 <p :class='fileErrors.status'>{{fileErrors.message}}</p>
+
                 </ul>
               </div>
             </div>
 
             <input class="btn btn-info" type="submit" value="Submit" />
-            <span v-if="loaded==false">working...</span>
+            <p class='text-danger'>{{this.errorMessage}}</p>
+            <p v-if="success==true" class='text-success'>Successfully submitted the user data.</p>
+
+              </div>
+            </div>
+
+            
           </form>
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
@@ -87,6 +119,7 @@
 export default {
     mounted(){
         this.loadImages();
+        this.loadFiles();
     },
     data(){
         return {
@@ -97,15 +130,49 @@ export default {
             fileErrors:{},
             imageErrors:{status:'',message:''},
             success:false,
-            loaded:true
+            loaded:true,
+            errorMessage:""
         }
     },
     methods:{
         submit(){
-
+          this.errors = "";
+          this.errorMessage="";
+            axios.post('/submit-details',this.fields).then(resp=>{
+              this.loaded= false;
+              this.success = true;
+              this.fields = {};
+              this.errors = {};
+              this.loadImages();
+              this.loadFiles();
+            }).catch(e=>{
+              if(e.response.status==422)
+                this.errors = e.response.data.errors;
+                else
+                this.errorMessage = "Error submitting form. Error code: "+e.response.status;
+            }).finally(e=>{
+              this.loaded = true;
+            })
         },
         submitFiles(){
-
+          let file = this.$refs.file.files[0];
+            if(this.loaded && file){
+                let formData = new FormData();
+                formData.append('file',file);
+                this.loaded=false;
+                this.fileErrors.status = '';
+                this.fileErrors.message='';
+                axios.post('/upload-files',formData).then(response=>{
+                    this.loadFiles();
+                }).catch(e=>{
+                    this.fileErrors.status = 'text-danger';
+                    this.fileErrors.message = 'Failed to upload file. Response code: '+e.response.status;
+                    if(e.response.status ==422)
+                    this.fileErrors.message= e.response.data.errors.file;  
+                }).finally(()=>{
+                  this.loaded = true;
+                })
+            }
         },
         submitImages(){
             let image = this.$refs.image.files[0];
@@ -116,18 +183,40 @@ export default {
                 this.imageErrors.status = '';
                 this.imageErrors.message='';
                 axios.post('/upload-images',formData).then(response=>{
-                    console.log(response);
+                    this.loadImages();
                 }).catch(e=>{
                     this.imageErrors.status = 'text-danger';
                     this.imageErrors.message = 'Failed to upload image. Response code: '+e.response.status;
-                    
+                    if(e.response.status ==422)
+                    this.imageErrors.message= e.response.data.errors.image;
+                }).finally(()=>{
+                  this.loaded = true;
                 })
             }
         },
         loadImages(){
+          this.images=[];
             axios.get('get-images').then(response=>{
                 this.images=response.data;
             })
+        },
+         loadFiles(){
+          this.files=[];
+            axios.get('get-files').then(response=>{
+                this.files=response.data;
+            })
+        },
+        deleteMedia(e){
+          this.loaded= false;
+          axios.get('/delete/'+e.currentTarget.dataset.id).then(response=>{
+            this.loadImages();
+            this.loadFiles();
+            //display notification
+          }).catch(e=>{
+            //display error notification
+          }).finally(e=>{
+            this.loaded=true;
+          })
         }
     }
 }
@@ -139,6 +228,29 @@ export default {
     cursor: pointer;
 }
 .photos img{
-    max-width:200px;
+    max-width:130px;
 }
+.single-image{
+    padding:5px;
+    display:flex;
+    flex-direction: column;
+}
+.single-image span{
+    align-self: start;
+    font-size:large;
+}
+
+.loader {
+  position: fixed;
+  top: 0%;
+  left: 0%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 9999;
+  align-items: center;
+  background: #ff07070f;
+}
+
 </style>

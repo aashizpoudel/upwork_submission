@@ -16,7 +16,14 @@ Route::get('/', function () {
 });
 
 Route::post('/upload-images','MediaController@uploadImages');
+Route::post('/upload-files','MediaController@uploadFiles');
+Route::post('/submit-details',"DetailController@store");
+
 
 Route::get('/get-images','MediaController@getImages');
+Route::get('/get-files','MediaController@getFiles');
+
+
+Route::get('/delete/{id}','MediaController@delete');
 
 
